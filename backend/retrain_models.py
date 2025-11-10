@@ -65,7 +65,7 @@ def retrain_calorie_model():
     history = model.fit(X, y, epochs=100, batch_size=32, verbose=1, validation_split=0.2)
 
     # Save retrained model
-    model_path = os.path.join(os.path.dirname(__file__), 'models/calorie_model.h5')
+    model_path = os.path.join(os.path.dirname(__file__), 'models/calorie_model.weights.h5')
     model.save_weights(model_path)
 
     print(f"\n✓ Model retrained and saved to {model_path}")

@@ -51,7 +51,7 @@ class CalorieCalculator:
         )
 
         # Initialize with pre-trained weights if available
-        model_path = os.path.join(os.path.dirname(__file__), 'calorie_model.h5')
+        model_path = os.path.join(os.path.dirname(__file__), 'calorie_model.weights.h5')
         if os.path.exists(model_path):
             model.load_weights(model_path)
         else:
@@ -92,7 +92,7 @@ class CalorieCalculator:
         model.fit(X, y, epochs=50, batch_size=32, verbose=0, validation_split=0.2)
 
         # Save trained model
-        model_path = os.path.join(os.path.dirname(__file__), 'calorie_model.h5')
+        model_path = os.path.join(os.path.dirname(__file__), 'calorie_model.weights.h5')
         model.save_weights(model_path)
 
     def calculate(self, age, height, weight, gender, activity_level, goal):
