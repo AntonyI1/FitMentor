@@ -1,7 +1,11 @@
 import numpy as np
+import os
+
+# Force TensorFlow to use CPU (avoids GPU/CUDA issues)
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
 import tensorflow as tf
 from tensorflow import keras
-import os
 
 class CalorieCalculator:
     """

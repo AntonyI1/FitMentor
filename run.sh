@@ -14,8 +14,13 @@ fi
 # Activate virtual environment
 source venv/bin/activate
 
+# Force CPU mode (avoids GPU/CUDA issues)
+export CUDA_VISIBLE_DEVICES='-1'
+export TF_CPP_MIN_LOG_LEVEL='2'
+
 # Start backend server
 echo "Starting backend server on http://localhost:5000"
+echo "Using CPU mode (fast enough for this app)"
 echo "Press Ctrl+C to stop"
 echo ""
 cd backend
