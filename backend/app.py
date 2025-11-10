@@ -68,6 +68,12 @@ def calculate_calories():
         return jsonify(result)
 
     except Exception as e:
+        import traceback
+        print(f"\n=== ERROR in calculate_calories ===")
+        print(f"Error: {str(e)}")
+        print(f"Traceback:")
+        print(traceback.format_exc())
+        print("=" * 40)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/suggest-workout', methods=['POST'])
