@@ -62,8 +62,8 @@ def calculate_calories():
             goal=data['goal']
         )
 
-        # Save data for future model improvement
-        data_collector.save_calorie_calculation(data, result)
+        # Save data for future model improvement (temporarily disabled for debugging)
+        # data_collector.save_calorie_calculation(data, result)
 
         return jsonify(result)
 
