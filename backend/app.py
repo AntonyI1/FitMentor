@@ -8,13 +8,15 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from models.calorie_calculator import CalorieCalculator
 from models.workout_suggester import WorkoutSuggester
+from models.data_collector import DataCollector
 
 app = Flask(__name__)
 CORS(app)
 
-# Initialize ML models
+# Initialize ML models and data collector
 calorie_calculator = CalorieCalculator()
 workout_suggester = WorkoutSuggester()
+data_collector = DataCollector()
 
 @app.route('/')
 def home():
@@ -60,6 +62,9 @@ def calculate_calories():
             goal=data['goal']
         )
 
+        # Save data for future model improvement
+        data_collector.save_calorie_calculation(data, result)
+
         return jsonify(result)
 
     except Exception as e:
@@ -96,6 +101,9 @@ def suggest_workout():
             session_duration=data.get('session_duration', 60)
         )
 
+        # Save data for future model improvement
+        data_collector.save_workout_plan(data, result)
+
         return jsonify(result)
 
     except Exception as e:
@@ -107,6 +115,18 @@ def get_exercises():
     try:
         exercises = workout_suggester.get_exercise_database()
         return jsonify(exercises)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stats', methods=['GET'])
+def get_stats():
+    """Get statistics about collected data for model improvement"""
+    try:
+        return jsonify({
+            'calorie_calculations': data_collector.get_calorie_data_count(),
+            'workout_plans': data_collector.get_workout_data_count(),
+            'message': 'Data collected for continuous model improvement'
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
