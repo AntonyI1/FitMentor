@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FitMentor - Your AI Fitness Coach</title>
+    <title>FitMentor - AI Fitness Coach</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -11,162 +11,181 @@
         <div class="container">
             <div class="nav-brand">
                 <h1>FitMentor</h1>
-                <p class="tagline">AI-Powered Fitness Coach</p>
-            </div>
-            <div class="nav-links">
-                <a href="#calculator" class="nav-link">Calorie Calculator</a>
-                <a href="#workout" class="nav-link">Workout Planner</a>
+                <p class="tagline">AI-Powered Fitness Coaching</p>
             </div>
         </div>
     </nav>
 
     <header class="hero">
         <div class="container">
-            <h1 class="hero-title">Transform Your Fitness Journey</h1>
-            <p class="hero-subtitle">Personalized nutrition and workout plans powered by artificial intelligence</p>
+            <h1 class="hero-title">What would you like to do?</h1>
+            <p class="hero-subtitle">Choose a tool to get started with your fitness journey</p>
             <div class="hero-cta">
-                <a href="#calculator" class="btn btn-primary">Calculate Calories</a>
-                <a href="#workout" class="btn btn-secondary">Get Workout Plan</a>
+                <button onclick="showSection('calculator')" class="btn btn-primary">Calculate My Calories</button>
+                <button onclick="showSection('workout')" class="btn btn-secondary">Generate Workout Plan</button>
             </div>
         </div>
     </header>
 
     <!-- Calorie Calculator Section -->
-    <section id="calculator" class="section">
-        <div class="container">
+    <section id="calculator" class="section hidden">
+        <div class="container-narrow">
             <div class="section-header">
-                <h2>Calorie Maintenance Calculator</h2>
-                <p>Get accurate calorie and macronutrient targets based on your personal data</p>
+                <h2>Calorie Calculator</h2>
+                <p>Enter your information to get personalized calorie and macro targets</p>
             </div>
 
-            <div class="calculator-grid">
-                <div class="form-card">
-                    <h3>Your Information</h3>
-                    <form id="calorieForm">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="age">Age</label>
-                                <input type="number" id="age" name="age" min="18" max="80" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="gender">Gender</label>
-                                <select id="gender" name="gender" required>
-                                    <option value="">Select</option>
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
-                                </select>
-                            </div>
+            <div class="main-card">
+                <form id="calorieForm">
+                    <!-- Unit Selection -->
+                    <div class="unit-selector">
+                        <label>Units:</label>
+                        <div class="toggle-group">
+                            <button type="button" class="toggle-btn active" data-unit="metric">Metric (kg, cm)</button>
+                            <button type="button" class="toggle-btn" data-unit="imperial">Imperial (lbs, ft/in)</button>
                         </div>
+                    </div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="height">Height (cm)</label>
-                                <input type="number" id="height" name="height" min="140" max="220" step="0.1" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="weight">Weight (kg)</label>
-                                <input type="number" id="weight" name="weight" min="40" max="200" step="0.1" required>
-                            </div>
-                        </div>
-
+                    <div class="form-row">
                         <div class="form-group">
-                            <label for="activity">Activity Level</label>
-                            <select id="activity" name="activity" required>
+                            <label for="age">Age (years)</label>
+                            <input type="number" id="age" name="age" min="18" max="80" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="gender">Gender</label>
+                            <select id="gender" name="gender" required>
                                 <option value="">Select</option>
-                                <option value="sedentary">Sedentary (little or no exercise)</option>
-                                <option value="light">Light (exercise 1-3 days/week)</option>
-                                <option value="moderate">Moderate (exercise 3-5 days/week)</option>
-                                <option value="active">Active (exercise 6-7 days/week)</option>
-                                <option value="very_active">Very Active (intense exercise daily)</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
                             </select>
                         </div>
+                    </div>
 
+                    <!-- Metric Height/Weight -->
+                    <div id="metricInputs">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="heightCm">Height (cm)</label>
+                                <input type="number" id="heightCm" name="heightCm" min="140" max="220" step="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="weightKg">Weight (kg)</label>
+                                <input type="number" id="weightKg" name="weightKg" min="40" max="200" step="0.5" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Imperial Height/Weight -->
+                    <div id="imperialInputs" class="hidden">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="heightFt">Height (feet)</label>
+                                <input type="number" id="heightFt" name="heightFt" min="4" max="7" step="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="heightIn">Height (inches)</label>
+                                <input type="number" id="heightIn" name="heightIn" min="0" max="11" step="1">
+                            </div>
+                        </div>
                         <div class="form-group">
-                            <label for="goal">Fitness Goal</label>
-                            <select id="goal" name="goal" required>
-                                <option value="">Select</option>
-                                <option value="lose">Lose Weight</option>
-                                <option value="maintain">Maintain Weight</option>
-                                <option value="gain">Gain Weight (Muscle)</option>
-                            </select>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary btn-block">Calculate</button>
-                    </form>
-                </div>
-
-                <div id="calorieResults" class="results-card hidden">
-                    <h3>Your Personalized Plan</h3>
-
-                    <div class="result-highlight">
-                        <div class="result-item">
-                            <span class="result-label">BMR</span>
-                            <span class="result-value" id="bmr">-</span>
-                        </div>
-                        <div class="result-item">
-                            <span class="result-label">TDEE</span>
-                            <span class="result-value" id="tdee">-</span>
-                        </div>
-                        <div class="result-item primary">
-                            <span class="result-label">Target Calories</span>
-                            <span class="result-value" id="targetCalories">-</span>
+                            <label for="weightLbs">Weight (lbs)</label>
+                            <input type="number" id="weightLbs" name="weightLbs" min="90" max="440" step="1">
                         </div>
                     </div>
 
-                    <div class="macros-section">
-                        <h4>Macronutrient Breakdown</h4>
-                        <div class="macro-bars">
-                            <div class="macro-item">
-                                <div class="macro-header">
-                                    <span class="macro-name">Protein</span>
-                                    <span class="macro-value" id="proteinValue">-</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill protein" id="proteinBar"></div>
-                                </div>
-                            </div>
-                            <div class="macro-item">
-                                <div class="macro-header">
-                                    <span class="macro-name">Carbs</span>
-                                    <span class="macro-value" id="carbsValue">-</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill carbs" id="carbsBar"></div>
-                                </div>
-                            </div>
-                            <div class="macro-item">
-                                <div class="macro-header">
-                                    <span class="macro-name">Fats</span>
-                                    <span class="macro-value" id="fatsValue">-</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill fats" id="fatsBar"></div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label for="activity">Activity Level</label>
+                        <select id="activity" name="activity" required>
+                            <option value="">Select</option>
+                            <option value="sedentary">Sedentary (little or no exercise)</option>
+                            <option value="light">Light (exercise 1-3 days/week)</option>
+                            <option value="moderate">Moderate (exercise 3-5 days/week)</option>
+                            <option value="active">Active (exercise 6-7 days/week)</option>
+                            <option value="very_active">Very Active (intense exercise daily)</option>
+                        </select>
                     </div>
 
-                    <div class="recommendations">
-                        <h4>Recommendations</h4>
-                        <ul id="recommendationsList"></ul>
+                    <div class="form-group">
+                        <label for="goal">Fitness Goal</label>
+                        <select id="goal" name="goal" required>
+                            <option value="">Select</option>
+                            <option value="lose">Lose Weight</option>
+                            <option value="maintain">Maintain Weight</option>
+                            <option value="gain">Gain Weight (Muscle)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block btn-large">Calculate My Calories</button>
+                </form>
+            </div>
+
+            <!-- Results show below form -->
+            <div id="calorieResults" class="results-section hidden">
+                <h3>Your Results</h3>
+
+                <div class="result-cards">
+                    <div class="result-card">
+                        <div class="result-label">BMR</div>
+                        <div class="result-value" id="bmr">-</div>
+                        <div class="result-desc">Base Metabolic Rate</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="result-label">TDEE</div>
+                        <div class="result-value" id="tdee">-</div>
+                        <div class="result-desc">Daily Energy Expenditure</div>
+                    </div>
+                    <div class="result-card primary">
+                        <div class="result-label">Target</div>
+                        <div class="result-value" id="targetCalories">-</div>
+                        <div class="result-desc">Daily Calorie Goal</div>
                     </div>
                 </div>
+
+                <div class="macros-grid">
+                    <div class="macro-card protein">
+                        <div class="macro-name">Protein</div>
+                        <div class="macro-amount" id="proteinValue">-</div>
+                    </div>
+                    <div class="macro-card carbs">
+                        <div class="macro-name">Carbs</div>
+                        <div class="macro-amount" id="carbsValue">-</div>
+                    </div>
+                    <div class="macro-card fats">
+                        <div class="macro-name">Fats</div>
+                        <div class="macro-amount" id="fatsValue">-</div>
+                    </div>
+                </div>
+
+                <div class="recommendations-box">
+                    <h4>Recommendations</h4>
+                    <ul id="recommendationsList"></ul>
+                </div>
+
+                <button onclick="showSection('home')" class="btn btn-secondary btn-block">Start Over</button>
             </div>
         </div>
     </section>
 
-    <!-- Workout Suggester Section -->
-    <section id="workout" class="section section-alt">
-        <div class="container">
+    <!-- Workout Section -->
+    <section id="workout" class="section hidden">
+        <div class="container-narrow">
             <div class="section-header">
-                <h2>AI Workout Planner</h2>
-                <p>Get a personalized workout plan designed by artificial intelligence</p>
+                <h2>Workout Planner</h2>
+                <p>Generate a personalized workout plan designed for your goals</p>
             </div>
 
-            <div class="calculator-grid">
-                <div class="form-card">
-                    <h3>Training Preferences</h3>
-                    <form id="workoutForm">
+            <div class="main-card">
+                <form id="workoutForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="workoutGender">Gender</label>
+                            <select id="workoutGender" name="workoutGender" required>
+                                <option value="">Select</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                            </select>
+                        </div>
+
                         <div class="form-group">
                             <label for="workoutGoal">Training Goal</label>
                             <select id="workoutGoal" name="workoutGoal" required>
@@ -177,7 +196,9 @@
                                 <option value="weight_loss">Weight Loss</option>
                             </select>
                         </div>
+                    </div>
 
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="experience">Experience Level</label>
                             <select id="experience" name="experience" required>
@@ -198,69 +219,73 @@
                                 <option value="6">6 Days</option>
                             </select>
                         </div>
+                    </div>
 
-                        <div class="form-group">
-                            <label for="sessionDuration">Session Duration (minutes)</label>
-                            <input type="number" id="sessionDuration" name="sessionDuration" min="30" max="120" value="60" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Available Equipment</label>
-                            <div class="checkbox-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="equipment" value="barbell"> Barbell
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="equipment" value="dumbbell"> Dumbbells
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="equipment" value="machine"> Machines
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="equipment" value="cable"> Cables
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="equipment" value="bench"> Bench
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="equipment" value="rack"> Squat Rack
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="equipment" value="pullup_bar"> Pull-up Bar
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="equipment" value="bodyweight"> Bodyweight Only
-                                </label>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary btn-block">Generate Workout Plan</button>
-                    </form>
-                </div>
-
-                <div id="workoutResults" class="results-card hidden">
-                    <h3>Your Personalized Workout Plan</h3>
-
-                    <div class="plan-info">
-                        <div class="info-badge">
-                            <span class="badge-label">Split</span>
-                            <span class="badge-value" id="splitName">-</span>
-                        </div>
-                        <div class="info-badge">
-                            <span class="badge-label">Goal</span>
-                            <span class="badge-value" id="planGoal">-</span>
+                    <div class="form-group">
+                        <label>Available Equipment</label>
+                        <div class="equipment-grid">
+                            <label class="equipment-option">
+                                <input type="checkbox" name="equipment" value="barbell">
+                                <span>Barbell</span>
+                            </label>
+                            <label class="equipment-option">
+                                <input type="checkbox" name="equipment" value="dumbbell">
+                                <span>Dumbbells</span>
+                            </label>
+                            <label class="equipment-option">
+                                <input type="checkbox" name="equipment" value="machine">
+                                <span>Machines</span>
+                            </label>
+                            <label class="equipment-option">
+                                <input type="checkbox" name="equipment" value="cable">
+                                <span>Cables</span>
+                            </label>
+                            <label class="equipment-option">
+                                <input type="checkbox" name="equipment" value="bench">
+                                <span>Bench</span>
+                            </label>
+                            <label class="equipment-option">
+                                <input type="checkbox" name="equipment" value="rack">
+                                <span>Rack</span>
+                            </label>
+                            <label class="equipment-option">
+                                <input type="checkbox" name="equipment" value="pullup_bar">
+                                <span>Pull-up Bar</span>
+                            </label>
+                            <label class="equipment-option">
+                                <input type="checkbox" name="equipment" value="bodyweight">
+                                <span>Bodyweight</span>
+                            </label>
                         </div>
                     </div>
 
-                    <div id="workoutPlan" class="workout-plan">
-                        <!-- Workout days will be inserted here -->
-                    </div>
+                    <button type="submit" class="btn btn-primary btn-block btn-large">Generate My Workout Plan</button>
+                </form>
+            </div>
 
-                    <div class="progression-section">
-                        <h4>Progression Strategy</h4>
-                        <div id="progressionInfo"></div>
+            <!-- Workout Results -->
+            <div id="workoutResults" class="results-section hidden">
+                <h3>Your Workout Plan</h3>
+
+                <div class="plan-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">Split</span>
+                        <span class="summary-value" id="splitName">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Goal</span>
+                        <span class="summary-value" id="planGoal">-</span>
                     </div>
                 </div>
+
+                <div id="workoutPlan"></div>
+
+                <div class="progression-box">
+                    <h4>Progression Strategy</h4>
+                    <div id="progressionInfo"></div>
+                </div>
+
+                <button onclick="showSection('home')" class="btn btn-secondary btn-block">Start Over</button>
             </div>
         </div>
     </section>
@@ -275,6 +300,29 @@
     <div id="loading" class="loading-overlay hidden">
         <div class="spinner"></div>
         <p>Processing with AI...</p>
+    </div>
+
+    <!-- Exercise Details Modal -->
+    <div id="exerciseModal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeExerciseModal()"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeExerciseModal()">&times;</button>
+            <h3 id="modalExerciseName">Exercise Name</h3>
+            <p id="modalSubcategory" class="modal-subcategory">Subcategory</p>
+            <p id="modalSecondaryMuscles" class="modal-secondary">Secondary Muscles</p>
+            <p id="modalDescription" class="modal-description">Description</p>
+
+            <div class="exercise-images">
+                <div class="image-container">
+                    <h4>Start Position</h4>
+                    <img id="startPositionImg" src="" alt="Start Position">
+                </div>
+                <div class="image-container">
+                    <h4>End Position</h4>
+                    <img id="endPositionImg" src="" alt="End Position">
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="js/app.js"></script>

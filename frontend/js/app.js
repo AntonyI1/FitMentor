@@ -1,56 +1,129 @@
 // API Configuration
 const API_BASE_URL = 'http://localhost:5000/api';
 
-// DOM Elements - Calorie Calculator
-const calorieForm = document.getElementById('calorieForm');
-const calorieResults = document.getElementById('calorieResults');
-const loadingOverlay = document.getElementById('loading');
-
-// DOM Elements - Workout Suggester
-const workoutForm = document.getElementById('workoutForm');
-const workoutResults = document.getElementById('workoutResults');
+// Current unit system
+let currentUnit = 'metric';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
-    smoothScroll();
+    showSection('home');
 });
 
 function setupEventListeners() {
-    // Calorie Calculator Form
-    calorieForm.addEventListener('submit', handleCalorieSubmit);
-
-    // Workout Form
-    workoutForm.addEventListener('submit', handleWorkoutSubmit);
-}
-
-// Smooth scroll for navigation
-function smoothScroll() {
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
+    // Unit toggle
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
             e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
+            switchUnits(btn.dataset.unit);
         });
     });
+
+    // Auto-round inputs
+    document.querySelectorAll('input[type="number"]').forEach(input => {
+        input.addEventListener('blur', autoRound);
+    });
+
+    // Form submissions
+    document.getElementById('calorieForm').addEventListener('submit', handleCalorieSubmit);
+    document.getElementById('workoutForm').addEventListener('submit', handleWorkoutSubmit);
 }
 
-// Calorie Calculator Functions
+function showSection(section) {
+    // Hide all sections
+    document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+
+    // Show requested section
+    if (section === 'home') {
+        document.querySelector('.hero').scrollIntoView({ behavior: 'smooth' });
+    } else {
+        document.getElementById(section).classList.remove('hidden');
+        document.getElementById(section).scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+function switchUnits(unit) {
+    currentUnit = unit;
+
+    // Update toggle buttons
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.unit === unit);
+    });
+
+    // Show/hide appropriate inputs
+    if (unit === 'metric') {
+        document.getElementById('metricInputs').classList.remove('hidden');
+        document.getElementById('imperialInputs').classList.add('hidden');
+
+        // Clear imperial and set metric required
+        document.getElementById('heightFt').removeAttribute('required');
+        document.getElementById('heightIn').removeAttribute('required');
+        document.getElementById('weightLbs').removeAttribute('required');
+        document.getElementById('heightCm').setAttribute('required', 'required');
+        document.getElementById('weightKg').setAttribute('required', 'required');
+    } else {
+        document.getElementById('metricInputs').classList.add('hidden');
+        document.getElementById('imperialInputs').classList.remove('hidden');
+
+        // Clear metric and set imperial required
+        document.getElementById('heightCm').removeAttribute('required');
+        document.getElementById('weightKg').removeAttribute('required');
+        document.getElementById('heightFt').setAttribute('required', 'required');
+        document.getElementById('heightIn').setAttribute('required', 'required');
+        document.getElementById('weightLbs').setAttribute('required', 'required');
+    }
+}
+
+function autoRound(e) {
+    const input = e.target;
+    if (input.value) {
+        // Round to 1 decimal place
+        input.value = Math.round(parseFloat(input.value) * 10) / 10;
+    }
+}
+
+// Unit Conversions
+function lbsToKg(lbs) {
+    return lbs * 0.453592;
+}
+
+function feetInchesToCm(feet, inches) {
+    const totalInches = (feet * 12) + inches;
+    return totalInches * 2.54;
+}
+
+// Calorie Calculator
 async function handleCalorieSubmit(e) {
     e.preventDefault();
 
+    // Get form data
+    const age = parseInt(document.getElementById('age').value);
+    const gender = document.getElementById('gender').value;
+    const activity = document.getElementById('activity').value;
+    const goal = document.getElementById('goal').value;
+
+    let height, weight;
+
+    // Convert units if needed
+    if (currentUnit === 'metric') {
+        height = parseFloat(document.getElementById('heightCm').value);
+        weight = parseFloat(document.getElementById('weightKg').value);
+    } else {
+        const feet = parseInt(document.getElementById('heightFt').value);
+        const inches = parseInt(document.getElementById('heightIn').value);
+        const lbs = parseFloat(document.getElementById('weightLbs').value);
+
+        height = Math.round(feetInchesToCm(feet, inches));
+        weight = Math.round(lbsToKg(lbs) * 10) / 10;
+    }
+
     const formData = {
-        age: parseInt(document.getElementById('age').value),
-        height: parseFloat(document.getElementById('height').value),
-        weight: parseFloat(document.getElementById('weight').value),
-        gender: document.getElementById('gender').value,
-        activity_level: document.getElementById('activity').value,
-        goal: document.getElementById('goal').value
+        age,
+        height,
+        weight,
+        gender,
+        activity_level: activity,
+        goal
     };
 
     showLoading(true);
@@ -80,50 +153,37 @@ async function handleCalorieSubmit(e) {
 }
 
 function displayCalorieResults(data) {
-    // Show results card
-    calorieResults.classList.remove('hidden');
+    // Show results
+    document.getElementById('calorieResults').classList.remove('hidden');
 
-    // Update main values
+    // Update values
     document.getElementById('bmr').textContent = `${data.bmr} kcal`;
     document.getElementById('tdee').textContent = `${data.tdee} kcal`;
     document.getElementById('targetCalories').textContent = `${data.target_calories} kcal`;
 
     // Update macros
     const macros = data.macros;
-
-    // Protein
-    document.getElementById('proteinValue').textContent =
-        `${macros.protein.grams}g (${macros.protein.percentage}%)`;
-    document.getElementById('proteinBar').style.width = `${macros.protein.percentage}%`;
-
-    // Carbs
-    document.getElementById('carbsValue').textContent =
-        `${macros.carbs.grams}g (${macros.carbs.percentage}%)`;
-    document.getElementById('carbsBar').style.width = `${macros.carbs.percentage}%`;
-
-    // Fats
-    document.getElementById('fatsValue').textContent =
-        `${macros.fats.grams}g (${macros.fats.percentage}%)`;
-    document.getElementById('fatsBar').style.width = `${macros.fats.percentage}%`;
+    document.getElementById('proteinValue').textContent = `${macros.protein.grams}g`;
+    document.getElementById('carbsValue').textContent = `${macros.carbs.grams}g`;
+    document.getElementById('fatsValue').textContent = `${macros.fats.grams}g`;
 
     // Update recommendations
-    const recommendationsList = document.getElementById('recommendationsList');
-    recommendationsList.innerHTML = '';
+    const recList = document.getElementById('recommendationsList');
+    recList.innerHTML = '';
     data.recommendations.forEach(rec => {
         const li = document.createElement('li');
         li.textContent = rec;
-        recommendationsList.appendChild(li);
+        recList.appendChild(li);
     });
 
     // Scroll to results
-    calorieResults.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    document.getElementById('calorieResults').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// Workout Suggester Functions
+// Workout Suggester
 async function handleWorkoutSubmit(e) {
     e.preventDefault();
 
-    // Get selected equipment
     const equipmentCheckboxes = document.querySelectorAll('input[name="equipment"]:checked');
     const equipment = Array.from(equipmentCheckboxes).map(cb => cb.value);
 
@@ -133,11 +193,12 @@ async function handleWorkoutSubmit(e) {
     }
 
     const formData = {
+        gender: document.getElementById('workoutGender').value,
         goal: document.getElementById('workoutGoal').value,
         experience: document.getElementById('experience').value,
         equipment: equipment,
         days_per_week: parseInt(document.getElementById('daysPerWeek').value),
-        session_duration: parseInt(document.getElementById('sessionDuration').value)
+        session_duration: 60
     };
 
     showLoading(true);
@@ -167,14 +228,11 @@ async function handleWorkoutSubmit(e) {
 }
 
 function displayWorkoutResults(data) {
-    // Show results card
-    workoutResults.classList.remove('hidden');
+    document.getElementById('workoutResults').classList.remove('hidden');
 
-    // Update plan info
     document.getElementById('splitName').textContent = data.split.name;
     document.getElementById('planGoal').textContent = formatGoalName(data.parameters.goal);
 
-    // Generate workout days
     const workoutPlan = document.getElementById('workoutPlan');
     workoutPlan.innerHTML = '';
 
@@ -183,11 +241,9 @@ function displayWorkoutResults(data) {
         workoutPlan.appendChild(dayElement);
     });
 
-    // Display progression info
     displayProgression(data.progression);
 
-    // Scroll to results
-    workoutResults.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    document.getElementById('workoutResults').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function createWorkoutDay(workout) {
@@ -222,7 +278,23 @@ function createExerciseItem(exercise) {
 
     const meta = document.createElement('div');
     meta.className = 'exercise-meta';
-    meta.textContent = `${exercise.exercise.muscle_group.charAt(0).toUpperCase() + exercise.exercise.muscle_group.slice(1)} • ${exercise.exercise.type}`;
+
+    // Format subcategory for display
+    let subcategoryText = '';
+    if (exercise.exercise.subcategory) {
+        subcategoryText = formatSubcategory(exercise.exercise.subcategory);
+    }
+
+    const muscleGroup = exercise.exercise.muscle_group.charAt(0).toUpperCase() + exercise.exercise.muscle_group.slice(1);
+    let metaHTML = subcategoryText ? `${muscleGroup} - ${subcategoryText}` : muscleGroup;
+
+    // Add secondary muscles if available
+    if (exercise.exercise.secondary_muscles && exercise.exercise.secondary_muscles.length > 0) {
+        const secondaryText = exercise.exercise.secondary_muscles.join(', ');
+        metaHTML += `<br><span class="secondary-muscles">+ ${secondaryText}</span>`;
+    }
+
+    meta.innerHTML = metaHTML;
 
     infoDiv.appendChild(name);
     infoDiv.appendChild(meta);
@@ -244,58 +316,98 @@ function createExerciseItem(exercise) {
     itemDiv.appendChild(infoDiv);
     itemDiv.appendChild(volumeDiv);
 
+    // Always add view form button (show for all exercises now)
+    const viewButton = document.createElement('button');
+    viewButton.className = 'view-form-btn';
+    viewButton.textContent = 'View Form';
+    viewButton.onclick = (e) => {
+        e.stopPropagation();
+        showExerciseDetails(exercise.exercise);
+    };
+    itemDiv.appendChild(viewButton);
+
     return itemDiv;
+}
+
+function formatSubcategory(subcategory) {
+    // Convert underscore format to readable text
+    return subcategory
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+}
+
+function showExerciseDetails(exercise) {
+    const modal = document.getElementById('exerciseModal');
+    const modalTitle = document.getElementById('modalExerciseName');
+    const modalSubcategory = document.getElementById('modalSubcategory');
+    const modalSecondary = document.getElementById('modalSecondaryMuscles');
+    const modalDescription = document.getElementById('modalDescription');
+    const startImg = document.getElementById('startPositionImg');
+    const endImg = document.getElementById('endPositionImg');
+
+    modalTitle.textContent = exercise.name;
+
+    // Show subcategory if available
+    if (exercise.subcategory) {
+        modalSubcategory.textContent = formatSubcategory(exercise.subcategory);
+        modalSubcategory.classList.remove('hidden');
+    } else {
+        modalSubcategory.classList.add('hidden');
+    }
+
+    // Show secondary muscles if available
+    if (exercise.secondary_muscles && exercise.secondary_muscles.length > 0) {
+        modalSecondary.textContent = 'Also works: ' + exercise.secondary_muscles.join(', ');
+        modalSecondary.classList.remove('hidden');
+    } else {
+        modalSecondary.classList.add('hidden');
+    }
+
+    // Show description
+    if (exercise.description) {
+        modalDescription.textContent = exercise.description;
+        modalDescription.classList.remove('hidden');
+    } else {
+        modalDescription.classList.add('hidden');
+    }
+
+    // Show images if available
+    if (exercise.start_image && exercise.end_image) {
+        startImg.src = exercise.start_image;
+        startImg.alt = `${exercise.name} - Start Position`;
+        endImg.src = exercise.end_image;
+        endImg.alt = `${exercise.name} - End Position`;
+    }
+
+    modal.classList.remove('hidden');
+}
+
+function closeExerciseModal() {
+    document.getElementById('exerciseModal').classList.add('hidden');
 }
 
 function displayProgression(progression) {
     const progressionInfo = document.getElementById('progressionInfo');
     progressionInfo.innerHTML = '';
 
-    // Method
     const methodDiv = document.createElement('div');
     methodDiv.className = 'progression-item';
     methodDiv.innerHTML = `
-        <span class="progression-label">Method:</span>
-        <span class="progression-value">${progression.method}</span>
+        <strong>Method:</strong> ${progression.method}<br>
+        <strong>How to Progress:</strong> ${progression.increment}<br>
+        <strong>Deload:</strong> ${progression.deload}
     `;
     progressionInfo.appendChild(methodDiv);
 
-    // Increment
-    const incrementDiv = document.createElement('div');
-    incrementDiv.className = 'progression-item';
-    incrementDiv.innerHTML = `
-        <span class="progression-label">How to Progress:</span>
-        <span class="progression-value">${progression.increment}</span>
-    `;
-    progressionInfo.appendChild(incrementDiv);
-
-    // Deload
-    const deloadDiv = document.createElement('div');
-    deloadDiv.className = 'progression-item';
-    deloadDiv.innerHTML = `
-        <span class="progression-label">Deload Strategy:</span>
-        <span class="progression-value">${progression.deload}</span>
-    `;
-    progressionInfo.appendChild(deloadDiv);
-
-    // Tips
     if (progression.tips && progression.tips.length > 0) {
-        const tipsDiv = document.createElement('div');
-        tipsDiv.className = 'progression-tips';
-
-        const tipsTitle = document.createElement('h5');
-        tipsTitle.textContent = 'Key Tips:';
-        tipsDiv.appendChild(tipsTitle);
-
         const tipsList = document.createElement('ul');
         progression.tips.forEach(tip => {
             const li = document.createElement('li');
             li.textContent = tip;
             tipsList.appendChild(li);
         });
-
-        tipsDiv.appendChild(tipsList);
-        progressionInfo.appendChild(tipsDiv);
+        progressionInfo.appendChild(tipsList);
     }
 }
 
@@ -311,17 +423,8 @@ function formatGoalName(goal) {
 
 function showLoading(show) {
     if (show) {
-        loadingOverlay.classList.remove('hidden');
+        document.getElementById('loading').classList.remove('hidden');
     } else {
-        loadingOverlay.classList.add('hidden');
+        document.getElementById('loading').classList.add('hidden');
     }
 }
-
-// Error handling for network issues
-window.addEventListener('online', () => {
-    console.log('Connection restored');
-});
-
-window.addEventListener('offline', () => {
-    alert('No internet connection. Please check your connection and try again.');
-});

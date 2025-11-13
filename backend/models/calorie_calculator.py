@@ -1,20 +1,22 @@
+"""
+Evidence-Based Calorie Calculator
+Uses Mifflin-St Jeor equation (gold standard for BMR calculation)
+Protein based on bodyweight: 1.0g per lb (research-backed target)
+
+TODO: Train ML model on real user data for personalization
+"""
+
 import numpy as np
 import os
 
-# Force TensorFlow to use CPU (avoids GPU/CUDA issues)
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 import tensorflow as tf
 from tensorflow import keras
 
-class CalorieCalculator:
-    """
-    AI-powered calorie calculator using TensorFlow neural network
-    Calculates maintenance calories and macronutrient breakdown
-    """
 
+class CalorieCalculator:
     def __init__(self):
-        self.model = self._build_model()
         self.activity_multipliers = {
             'sedentary': 1.2,
             'light': 1.375,
@@ -24,194 +26,151 @@ class CalorieCalculator:
         }
 
         self.goal_adjustments = {
-            'lose': -500,  # 500 calorie deficit
+            'lose': -500,    # 500 kcal deficit = ~1 lb/week loss
             'maintain': 0,
-            'gain': 300    # 300 calorie surplus
+            'gain': 300      # 300 kcal surplus = lean muscle gain
         }
 
+        self.protein_targets = {
+            'lose': 1.0,     # 1.0g/lb - preserves muscle in deficit
+            'maintain': 1.0,
+            'gain': 1.0
+        }
+
+        self.fat_minimum_ratio = 0.25  # At least 25% of calories from fat
+
+        # TODO: Lazy-load ML model when trained weights available
+        self.model = None
+
     def _build_model(self):
-        """
-        Build TensorFlow neural network for calorie prediction
-        Input features: age, height, weight, gender_encoded, activity_level_encoded
-        Output: BMR (Basal Metabolic Rate)
-        """
+        """Build TensorFlow neural network for future personalized calorie prediction"""
         model = keras.Sequential([
             keras.layers.Dense(64, activation='relu', input_shape=(5,)),
             keras.layers.Dropout(0.2),
             keras.layers.Dense(32, activation='relu'),
             keras.layers.Dropout(0.1),
             keras.layers.Dense(16, activation='relu'),
-            keras.layers.Dense(1, activation='linear')  # BMR output
+            keras.layers.Dense(1, activation='linear')
         ])
 
-        model.compile(
-            optimizer='adam',
-            loss='mse',
-            metrics=['mae']
-        )
+        model.compile(optimizer='adam', loss='mse', metrics=['mae'])
 
-        # Initialize with pre-trained weights if available
-        model_path = os.path.join(os.path.dirname(__file__), 'calorie_model.weights.h5')
-        if os.path.exists(model_path):
-            model.load_weights(model_path)
-        else:
-            # Train on synthetic data for initial deployment
-            self._train_initial_model(model)
+        # TODO: Load trained weights
+        # model_path = os.path.join(os.path.dirname(__file__), 'calorie_model.weights.h5')
+        # if os.path.exists(model_path):
+        #     model.load_weights(model_path)
 
         return model
 
-    def _train_initial_model(self, model):
-        """
-        Train model on synthetic data based on established BMR formulas
-        Uses Mifflin-St Jeor equation as ground truth
-        """
-        # Generate synthetic training data
-        np.random.seed(42)
-        n_samples = 10000
-
-        # Generate realistic ranges
-        ages = np.random.randint(18, 70, n_samples)
-        heights = np.random.uniform(150, 200, n_samples)  # cm
-        weights = np.random.uniform(50, 120, n_samples)   # kg
-        genders = np.random.randint(0, 2, n_samples)      # 0=female, 1=male
-        activity_levels = np.random.uniform(0, 1, n_samples)
-
-        # Calculate BMR using Mifflin-St Jeor equation
-        bmr = np.zeros(n_samples)
-        for i in range(n_samples):
-            if genders[i] == 1:  # male
-                bmr[i] = 10 * weights[i] + 6.25 * heights[i] - 5 * ages[i] + 5
-            else:  # female
-                bmr[i] = 10 * weights[i] + 6.25 * heights[i] - 5 * ages[i] - 161
-
-        # Prepare training data
-        X = np.column_stack([ages, heights, weights, genders, activity_levels])
-        y = bmr
-
-        # Train model
-        model.fit(X, y, epochs=50, batch_size=32, verbose=0, validation_split=0.2)
-
-        # Save trained model
-        model_path = os.path.join(os.path.dirname(__file__), 'calorie_model.weights.h5')
-        model.save_weights(model_path)
-
     def calculate(self, age, height, weight, gender, activity_level, goal):
-        """
-        Calculate maintenance calories and macronutrient breakdown
+        """Calculate personalized calorie and macro targets using Mifflin-St Jeor equation"""
+        bmr = self._calculate_bmr(age, height, weight, gender)
 
-        Args:
-            age: int, years
-            height: float, cm
-            weight: float, kg
-            gender: str, 'male' or 'female'
-            activity_level: str, activity level key
-            goal: str, 'lose', 'maintain', or 'gain'
+        # TODO: Apply ML model adjustment when available
+        # if self.model is not None:
+        #     features = self._encode_features(age, height, weight, gender, activity_level)
+        #     adjustment_factor = self.model.predict(features, verbose=0)[0][0]
+        #     bmr *= adjustment_factor
 
-        Returns:
-            dict with calorie and macro information
-        """
-        # Encode inputs
-        gender_encoded = 1 if gender.lower() == 'male' else 0
-        activity_encoded = list(self.activity_multipliers.keys()).index(activity_level) / 4.0
+        activity_multiplier = self.activity_multipliers.get(activity_level, 1.2)
+        tdee = int(bmr * activity_multiplier)
 
-        # Prepare input for model
-        input_data = np.array([[age, height, weight, gender_encoded, activity_encoded]])
-
-        # Predict BMR using neural network
-        bmr_predicted = self.model.predict(input_data, verbose=0)[0][0]
-
-        # Also calculate using Mifflin-St Jeor for validation
-        if gender.lower() == 'male':
-            bmr_formula = 10 * weight + 6.25 * height - 5 * age + 5
-        else:
-            bmr_formula = 10 * weight + 6.25 * height - 5 * age - 161
-
-        # Use weighted average of ML prediction and formula
-        bmr = 0.7 * bmr_predicted + 0.3 * bmr_formula
-
-        # Calculate TDEE (Total Daily Energy Expenditure)
-        activity_multiplier = self.activity_multipliers[activity_level]
-        tdee = bmr * activity_multiplier
-
-        # Adjust for goal
-        goal_adjustment = self.goal_adjustments[goal]
+        goal_adjustment = self.goal_adjustments.get(goal, 0)
         target_calories = tdee + goal_adjustment
 
-        # Calculate macronutrient breakdown
-        macros = self._calculate_macros(target_calories, weight, goal)
+        weight_lbs = weight * 2.20462
+        macros = self._calculate_macros(target_calories, goal, weight_lbs)
+        recommendations = self._generate_recommendations(goal, activity_level, target_calories)
 
         return {
-            'bmr': round(bmr, 1),
-            'tdee': round(tdee, 1),
-            'target_calories': round(target_calories, 1),
-            'goal': goal,
+            'bmr': int(bmr),
+            'tdee': tdee,
+            'target_calories': target_calories,
             'macros': macros,
-            'recommendations': self._get_recommendations(goal, target_calories)
+            'recommendations': recommendations
         }
 
-    def _calculate_macros(self, calories, weight, goal):
-        """
-        Calculate optimal macronutrient breakdown
-
-        Protein: 1.8-2.2g per kg bodyweight (higher for cutting)
-        Fats: 25-30% of total calories
-        Carbs: Remaining calories
-        """
-        # Protein calculation
-        if goal == 'lose':
-            protein_per_kg = 2.2  # Higher protein for muscle preservation
-        elif goal == 'gain':
-            protein_per_kg = 2.0
+    def _calculate_bmr(self, age, height, weight, gender):
+        """Calculate BMR using Mifflin-St Jeor equation"""
+        if gender == 'male':
+            return 10 * weight + 6.25 * height - 5 * age + 5
         else:
-            protein_per_kg = 1.8
+            return 10 * weight + 6.25 * height - 5 * age - 161
 
-        protein_grams = weight * protein_per_kg
+    def _calculate_macros(self, target_calories, goal, weight_lbs):
+        """Calculate macronutrient breakdown based on bodyweight and goal"""
+        # Protein: 1.0g per lb bodyweight
+        protein_per_lb = self.protein_targets[goal]
+        protein_grams = int(weight_lbs * protein_per_lb)
         protein_calories = protein_grams * 4
 
-        # Fat calculation (25-30% of calories)
-        fat_percentage = 0.28
-        fat_calories = calories * fat_percentage
-        fat_grams = fat_calories / 9
+        # Fat: minimum 25% of calories for hormonal health
+        fat_calories = int(target_calories * self.fat_minimum_ratio)
+        fat_grams = int(fat_calories / 9)
 
-        # Carbs get remaining calories
-        carb_calories = calories - protein_calories - fat_calories
-        carb_grams = carb_calories / 4
+        # Carbs: remaining calories
+        carbs_calories = target_calories - protein_calories - fat_calories
+        carbs_grams = int(carbs_calories / 4)
+
+        protein_percentage = int((protein_calories / target_calories) * 100)
+        carbs_percentage = int((carbs_calories / target_calories) * 100)
+        fats_percentage = int((fat_calories / target_calories) * 100)
 
         return {
-            'protein': {
-                'grams': round(protein_grams, 1),
-                'calories': round(protein_calories, 1),
-                'percentage': round((protein_calories / calories) * 100, 1)
-            },
-            'carbs': {
-                'grams': round(carb_grams, 1),
-                'calories': round(carb_calories, 1),
-                'percentage': round((carb_calories / calories) * 100, 1)
-            },
-            'fats': {
-                'grams': round(fat_grams, 1),
-                'calories': round(fat_calories, 1),
-                'percentage': round((fat_calories / calories) * 100, 1)
-            }
+            'protein': {'grams': protein_grams, 'calories': protein_calories, 'percentage': protein_percentage},
+            'carbs': {'grams': carbs_grams, 'calories': carbs_calories, 'percentage': carbs_percentage},
+            'fats': {'grams': fat_grams, 'calories': fat_calories, 'percentage': fats_percentage}
         }
 
-    def _get_recommendations(self, goal, calories):
-        """Generate personalized recommendations based on goal"""
+    def _generate_recommendations(self, goal, activity_level, target_calories):
+        """Generate personalized nutrition recommendations"""
         recommendations = []
 
         if goal == 'lose':
-            recommendations.append("Aim for 0.5-1kg weight loss per week for sustainable results")
-            recommendations.append("Prioritize protein to preserve muscle mass during deficit")
-            recommendations.append("Include resistance training 3-4x per week")
+            recommendations.extend([
+                f"Aim for {target_calories} calories per day for sustainable 1 lb/week weight loss",
+                "Protein at 1.0g per lb bodyweight to preserve muscle",
+                "Track weight weekly and adjust calories if progress stalls for 2+ weeks",
+                "Include 2-3 strength training sessions per week"
+            ])
         elif goal == 'gain':
-            recommendations.append("Aim for 0.25-0.5kg weight gain per week to minimize fat gain")
-            recommendations.append("Progressive overload in training is essential")
-            recommendations.append("Spread protein intake across 4-5 meals daily")
-        else:
-            recommendations.append("Monitor weight weekly and adjust calories if needed")
-            recommendations.append("Focus on body composition over scale weight")
+            recommendations.extend([
+                f"Aim for {target_calories} calories per day for lean muscle gain",
+                "Protein at 1.0g per lb bodyweight to support muscle growth",
+                "Time carbs around workouts for optimal performance",
+                "Gain 0.5-1 lb per week; adjust if gaining faster"
+            ])
+        else:  # maintain
+            recommendations.extend([
+                f"Maintain {target_calories} calories per day",
+                "Protein at 1.0g per lb bodyweight for muscle maintenance",
+                "Continue strength training to maintain or build muscle",
+                "Monitor weight weekly and adjust if trending"
+            ])
 
-        recommendations.append(f"Drink at least 3L of water daily")
-        recommendations.append("Track your intake for at least 2 weeks to establish patterns")
+        if activity_level in ['active', 'very_active']:
+            recommendations.extend([
+                "Ensure adequate carbs for recovery and performance",
+                "Post-workout meal with protein and carbs within 2 hours"
+            ])
+
+        recommendations.extend([
+            "Spread protein across 3-4 meals for optimal synthesis",
+            "Stay hydrated: 0.5-1 oz water per lb bodyweight daily",
+            "Prioritize whole foods: vegetables, fruits, lean proteins, whole grains, healthy fats"
+        ])
 
         return recommendations
+
+    def _encode_features(self, age, height, weight, gender, activity_level):
+        """Encode features for ML model input (when ML model is used)"""
+        gender_encoded = 1 if gender == 'male' else 0
+        activity_encoded = {
+            'sedentary': 0.0,
+            'light': 0.25,
+            'moderate': 0.5,
+            'active': 0.75,
+            'very_active': 1.0
+        }.get(activity_level, 0.5)
+
+        return np.array([[age, height, weight, gender_encoded, activity_encoded]])

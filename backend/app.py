@@ -31,28 +31,15 @@ def home():
 
 @app.route('/api/calculate-calories', methods=['POST'])
 def calculate_calories():
-    """
-    Calculate maintenance calories and macronutrient breakdown
-    Expected input:
-    {
-        "age": int,
-        "height": float (cm),
-        "weight": float (kg),
-        "gender": str ("male" or "female"),
-        "activity_level": str ("sedentary", "light", "moderate", "active", "very_active"),
-        "goal": str ("lose", "maintain", "gain")
-    }
-    """
+    """Calculate maintenance calories and macronutrient breakdown"""
     try:
         data = request.get_json()
 
-        # Validate required fields
         required_fields = ['age', 'height', 'weight', 'gender', 'activity_level', 'goal']
         for field in required_fields:
             if field not in data:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
 
-        # Calculate calories and macros
         result = calorie_calculator.calculate(
             age=data['age'],
             height=data['height'],
@@ -62,52 +49,34 @@ def calculate_calories():
             goal=data['goal']
         )
 
-        # Save data for future model improvement (temporarily disabled for debugging)
+        # Save data for future model improvement (temporarily disabled)
         # data_collector.save_calorie_calculation(data, result)
 
         return jsonify(result)
 
     except Exception as e:
-        import traceback
-        print(f"\n=== ERROR in calculate_calories ===")
-        print(f"Error: {str(e)}")
-        print(f"Traceback:")
-        print(traceback.format_exc())
-        print("=" * 40)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/suggest-workout', methods=['POST'])
 def suggest_workout():
-    """
-    Generate personalized workout plan
-    Expected input:
-    {
-        "goal": str ("strength", "hypertrophy", "endurance", "weight_loss"),
-        "experience": str ("beginner", "intermediate", "advanced"),
-        "equipment": list of str (["barbell", "dumbbell", "machine", etc.]),
-        "days_per_week": int (3-6),
-        "session_duration": int (minutes, 30-120)
-    }
-    """
+    """Generate personalized workout plan"""
     try:
         data = request.get_json()
 
-        # Validate required fields
-        required_fields = ['goal', 'experience', 'equipment', 'days_per_week']
+        required_fields = ['gender', 'goal', 'experience', 'equipment', 'days_per_week']
         for field in required_fields:
             if field not in data:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
 
-        # Generate workout plan
         result = workout_suggester.generate_plan(
             goal=data['goal'],
             experience=data['experience'],
             equipment=data['equipment'],
             days_per_week=data['days_per_week'],
-            session_duration=data.get('session_duration', 60)
+            session_duration=data.get('session_duration', 60),
+            gender=data['gender']
         )
 
-        # Save data for future model improvement
         data_collector.save_workout_plan(data, result)
 
         return jsonify(result)
